@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const session = require("express-session");
+const session = require("express-session"); // ✅ apenas aqui
 const path = require("path");
 const handlebars = require("express-handlebars");
 const publicRoutes = require("./routes/publicRoutes");
@@ -23,20 +23,18 @@ app.engine(
 app.set("view engine", "handlebars");
 app.set("views", path.join(__dirname, "views"));
 
-// Middleware para servir arquivos estáticos
+// Arquivos estáticos
 app.use(express.static(path.join(__dirname, "assets")));
 
-// Middleware para processar corpos de requisição
-app.use(express.urlencoded({ extended: true })); // Para formulários HTML
-app.use(express.json()); // Para requisições JSON
+// Body parser
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-// Configuração da sessão
-const session = require("express-session");
-
+// ✅ Configuração da sessão (sem duplicar require)
 app.set('trust proxy', 1);
 
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || "segredo",
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -47,14 +45,12 @@ app.use(session({
 // Rotas públicas
 app.use("/", publicRoutes);
 
-// Rotas de autenticação (diretamente em app.js)
+// Rotas de autenticação
 app.post("/login", authController.login);
 app.post("/cadastrar", authController.register);
 app.get("/logout", authController.logout);
 
-// Rotas privadas (requerem autenticação)
-app.use("/", authMiddleware.checarAutenticacao, authRoutes); // Use authRoutes como rotas privadas
+// Rotas privadas
+app.use("/", authMiddleware.checarAutenticacao, authRoutes);
 
-// Exportar o app para uso em testes
 module.exports = app;
-
